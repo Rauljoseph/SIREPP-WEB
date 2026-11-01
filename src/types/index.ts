@@ -2,8 +2,7 @@
 export enum TipoEvento {
   ROBO = 'ROBO',
   HURTO = 'HURTO',
-  APROPIACION_INDEBIDA = 'APROPIACION_INDEBIDA',
-  OTROS = 'OTROS',
+  EXTRAVIO = 'EXTRAVIO',
 }
 
 export enum EstadoEncargo {

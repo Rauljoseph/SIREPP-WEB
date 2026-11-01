@@ -63,8 +63,7 @@ const estadoBadge: Record<string, { variant: 'success' | 'warning' | 'danger' | 
 const tipoEventoLabels: Record<string, string> = {
   ROBO: 'Robo',
   HURTO: 'Hurto',
-  APROPIACION_INDEBIDA: 'Apropiación indebida',
-  OTROS: 'Otros',
+  EXTRAVIO: 'Extravío',
 };
 
 function formatDate(d: string) {
@@ -113,9 +112,14 @@ function EncargosPageContent() {
     setError('');
     try {
       const nuevoEncargo = await encargosApi.crear({
-        ...form,
         placa: form.placa.toUpperCase().replace(/[-.\s]/g, ''),
-      });
+        tipoEvento: form.tipoEvento,
+        denuncianteRut: form.denuncianteRut,
+        denuncianteNombre: form.denuncianteNombre,
+        denuncianteEmail: form.denuncianteEmail,
+        fechaHecho: form.fechaHecho,
+        unidadId: form.unidadId,
+      } as CrearEncargoDto);
       setEncargos((prev) => [nuevoEncargo, ...prev]);
       setShowModal(false);
       setForm(initialForm);
@@ -275,8 +279,7 @@ function EncargosPageContent() {
               options={[
                 { value: 'ROBO', label: 'Robo' },
                 { value: 'HURTO', label: 'Hurto' },
-                { value: 'APROPIACION_INDEBIDA', label: 'Apropiación indebida' },
-                { value: 'OTROS', label: 'Otros' },
+                { value: 'EXTRAVIO', label: 'Extravío' },
               ]}
             />
           </div>
@@ -303,12 +306,6 @@ function EncargosPageContent() {
                 value={form.denuncianteEmail}
                 onChange={(e) => updateForm('denuncianteEmail', e.target.value)}
               />
-              <Input
-                label="Teléfono"
-                placeholder="+56 9 1234 5678"
-                value={form.denuncianteTelefono || ''}
-                onChange={(e) => updateForm('denuncianteTelefono', e.target.value)}
-              />
             </div>
           </div>
 
@@ -319,20 +316,6 @@ function EncargosPageContent() {
                 type="date"
                 value={form.fechaHecho}
                 onChange={(e) => updateForm('fechaHecho', e.target.value)}
-              />
-              <Input
-                label="Lugar del Hecho"
-                placeholder="Dirección o referencia"
-                value={form.lugarHecho || ''}
-                onChange={(e) => updateForm('lugarHecho', e.target.value)}
-              />
-            </div>
-            <div className="mt-4">
-              <Input
-                label="Observaciones"
-                placeholder="Información adicional relevante"
-                value={form.observaciones || ''}
-                onChange={(e) => updateForm('observaciones', e.target.value)}
               />
             </div>
           </div>
