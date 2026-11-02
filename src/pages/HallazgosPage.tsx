@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Component, type ReactNode } from 'react';
 import { Plus, Search, FileSearch } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -35,7 +35,6 @@ function formatDate(d: string) {
 const initialForm: CrearHallazgoDto = {
   placa: '',
   estadoFisico: EstadoFisico.BUENO,
-  ubicacion: '',
   observaciones: '',
   unidadId: UNIDAD_DEMO_ID,
 };
@@ -69,9 +68,11 @@ export function HallazgosPage() {
     setError('');
     try {
       const nuevo = await hallazgosApi.crear({
-        ...form,
         placa: form.placa.toUpperCase().replace(/[-.\s]/g, ''),
-      });
+        estadoFisico: form.estadoFisico,
+        observaciones: form.observaciones || undefined,
+        unidadId: form.unidadId,
+      } as CrearHallazgoDto);
       setHallazgos((prev) => [nuevo, ...prev]);
       setShowModal(false);
       setForm(initialForm);
@@ -101,11 +102,6 @@ export function HallazgosPage() {
           {estadoFisicoLabels[h.estadoFisico] || h.estadoFisico}
         </Badge>
       ),
-    },
-    {
-      key: 'ubicacion',
-      header: 'Ubicación',
-      render: (h: Hallazgo) => h.ubicacion || '—',
     },
     {
       key: 'observaciones',
@@ -196,12 +192,6 @@ export function HallazgosPage() {
             />
           </div>
           <Input
-            label="Ubicación"
-            placeholder="Dirección donde se encontró"
-            value={form.ubicacion || ''}
-            onChange={(e) => setForm((p) => ({ ...p, ubicacion: e.target.value }))}
-          />
-          <Input
             label="Observaciones"
             placeholder="Detalles del hallazgo"
             value={form.observaciones || ''}
@@ -219,5 +209,39 @@ export function HallazgosPage() {
         </div>
       </Modal>
     </div>
+  );
+}
+
+class HallazgosErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: '' };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-red-800 mb-2">Error en Hallazgos</h2>
+            <p className="text-sm text-red-600">{this.state.error}</p>
+            <button onClick={() => this.setState({ hasError: false, error: '' })} className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
+              Reintentar
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export function HallazgosPageWithBoundary() {
+  return (
+    <HallazgosErrorBoundary>
+      <HallazgosPage />
+    </HallazgosErrorBoundary>
   );
 }

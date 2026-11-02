@@ -146,7 +146,6 @@ export interface CrearEncargoDto {
 export interface CrearHallazgoDto {
   placa: string;
   estadoFisico: EstadoFisico;
-  ubicacion?: string;
   observaciones?: string;
   unidadId: string;
 }

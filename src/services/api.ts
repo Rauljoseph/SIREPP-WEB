@@ -19,7 +19,7 @@ const api = axios.create({
 // ── Encargos ───────────────────────────────────────────
 export const encargosApi = {
   crear: (data: CrearEncargoDto) =>
-    api.post<Encargo>('/encargos', data).then((r) => r.data),
+    api.post<{ encargo: Encargo }>('/encargos', data).then((r) => r.data.encargo),
 
   obtenerPorId: (id: string) =>
     api.get<Encargo>(`/encargos/${id}`).then((r) => r.data),
@@ -34,7 +34,7 @@ export const encargosApi = {
 // ── Hallazgos ──────────────────────────────────────────
 export const hallazgosApi = {
   crear: (data: CrearHallazgoDto) =>
-    api.post<Hallazgo>('/hallazgos', data).then((r) => r.data),
+    api.post<{ hallazgo: Hallazgo }>('/hallazgos', data).then((r) => r.data.hallazgo),
 
   obtenerPorId: (id: string) =>
     api.get<Hallazgo>(`/hallazgos/${id}`).then((r) => r.data),
