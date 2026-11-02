@@ -118,10 +118,9 @@ export interface Notificacion {
 
 export interface EstadoPlaca {
   placa: string;
-  encargos: Encargo[];
+  encargo: Encargo | null;
   hallazgos: Hallazgo[];
-  reunificaciones: Reunificacion[];
-  lecturas: EventoLectura[];
+  reunificacion: Reunificacion | null;
   resumen: {
     tieneEncargoVigente: boolean;
     estaReunificada: boolean;

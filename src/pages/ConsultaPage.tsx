@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, AlertTriangle, FileSearch, Handshake, Radio, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Search, AlertTriangle, FileSearch, Handshake, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -150,35 +150,30 @@ export function ConsultaPage() {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Encargos */}
+              {/* Encargo */}
               <Card padding={false}>
                 <div className="p-5 pb-0">
                   <CardHeader
-                    title={`Encargos (${resultado.encargos.length})`}
-                    description="Historial de encargos registrados"
+                    title="Encargo"
+                    description="Encargo registrado para esta placa"
                   />
                 </div>
-                {resultado.encargos.length === 0 ? (
+                {!resultado.encargo ? (
                   <div className="px-5 pb-5">
-                    <p className="text-sm text-gray-400 py-4 text-center">Sin encargos registrados</p>
+                    <p className="text-sm text-gray-400 py-4 text-center">Sin encargo registrado</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-100">
-                    {resultado.encargos.map((enc) => {
-                      const badge = estadoBadge[enc.estado] || { variant: 'neutral' as const, label: enc.estado };
-                      return (
-                        <div key={enc.id} className="px-5 py-3 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <AlertTriangle size={16} className="text-gray-400" />
-                            <div>
-                              <p className="text-sm text-gray-700">{enc.tipoEvento}</p>
-                              <p className="text-xs text-gray-400">{formatDate(enc.createdAt)}</p>
-                            </div>
-                          </div>
-                          <Badge variant={badge.variant}>{badge.label}</Badge>
-                        </div>
-                      );
-                    })}
+                  <div className="px-5 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle size={16} className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-700">{resultado.encargo.tipoEvento}</p>
+                        <p className="text-xs text-gray-400">{formatDate(resultado.encargo.createdAt)}</p>
+                      </div>
+                    </div>
+                    <Badge variant={(estadoBadge[resultado.encargo.estado] || { variant: 'neutral' as const }).variant}>
+                      {(estadoBadge[resultado.encargo.estado] || { label: resultado.encargo.estado }).label}
+                    </Badge>
                   </div>
                 )}
               </Card>
@@ -202,13 +197,13 @@ export function ConsultaPage() {
                         <div className="flex items-center gap-3">
                           <FileSearch size={16} className="text-gray-400" />
                           <div>
-                            <p className="text-sm text-gray-700">{hal.ubicacion || 'Sin ubicación'}</p>
+                            <p className="text-sm text-gray-700">{hal.estadoFisico}</p>
                             <p className="text-xs text-gray-400">{formatDate(hal.createdAt)}</p>
                           </div>
                         </div>
                         <Badge variant={
                           hal.estadoFisico === 'BUENO' ? 'success' :
-                          hal.estadoFisico === 'REGULAR' ? 'warning' : 'danger'
+                            hal.estadoFisico === 'REGULAR' ? 'warning' : 'danger'
                         }>
                           {hal.estadoFisico}
                         </Badge>
@@ -218,73 +213,36 @@ export function ConsultaPage() {
                 )}
               </Card>
 
-              {/* Reunificaciones */}
+              {/* Reunificación */}
               <Card padding={false}>
                 <div className="p-5 pb-0">
                   <CardHeader
-                    title={`Reunificaciones (${resultado.reunificaciones.length})`}
-                    description="Procesos de conciliación y entrega"
+                    title="Reunificación"
+                    description="Proceso de conciliación y entrega"
                   />
                 </div>
-                {resultado.reunificaciones.length === 0 ? (
+                {!resultado.reunificacion ? (
                   <div className="px-5 pb-5">
-                    <p className="text-sm text-gray-400 py-4 text-center">Sin reunificaciones</p>
+                    <p className="text-sm text-gray-400 py-4 text-center">Sin reunificación</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-100">
-                    {resultado.reunificaciones.map((reu) => {
-                      const badge = estadoBadge[reu.estado] || { variant: 'neutral' as const, label: reu.estado };
-                      return (
-                        <div key={reu.id} className="px-5 py-3 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Handshake size={16} className="text-gray-400" />
-                            <div>
-                              <p className="text-sm text-gray-700">
-                                {reu.receptorNombre || 'Pendiente de entrega'}
-                              </p>
-                              <p className="text-xs text-gray-400">{formatDate(reu.createdAt)}</p>
-                            </div>
-                          </div>
-                          <Badge variant={badge.variant}>{badge.label}</Badge>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </Card>
-
-              {/* Lecturas de pórtico */}
-              <Card padding={false}>
-                <div className="p-5 pb-0">
-                  <CardHeader
-                    title={`Lecturas (${resultado.lecturas.length})`}
-                    description="Detecciones en pórticos de trazabilidad"
-                  />
-                </div>
-                {resultado.lecturas.length === 0 ? (
-                  <div className="px-5 pb-5">
-                    <p className="text-sm text-gray-400 py-4 text-center">Sin lecturas registradas</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-100">
-                    {resultado.lecturas.slice(0, 5).map((lec) => (
-                      <div key={lec.id} className="px-5 py-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Radio size={16} className="text-gray-400" />
-                          <div>
-                            <p className="text-sm text-gray-700">{lec.portico}</p>
-                            <p className="text-xs text-gray-400">{formatDate(lec.timestampLectura)}</p>
-                          </div>
-                        </div>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                          lec.nivelConfianza >= 0.75
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {(lec.nivelConfianza * 100).toFixed(0)}%
-                        </span>
+                  <div className="px-5 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Handshake size={16} className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Conciliada el {formatDate(resultado.reunificacion.fechaConciliacion)}
+                        </p>
+                        {resultado.reunificacion.fechaEntrega && (
+                          <p className="text-xs text-gray-400">
+                            Entregada: {formatDate(resultado.reunificacion.fechaEntrega)}
+                          </p>
+                        )}
                       </div>
-                    ))}
+                    </div>
+                    <Badge variant={(estadoBadge[resultado.reunificacion.estado] || { variant: 'neutral' as const }).variant}>
+                      {(estadoBadge[resultado.reunificacion.estado] || { label: resultado.reunificacion.estado }).label}
+                    </Badge>
                   </div>
                 )}
               </Card>
