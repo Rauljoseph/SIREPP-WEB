@@ -10,6 +10,7 @@ import { Modal } from '../components/ui/Modal';
 import { EmptyState } from '../components/ui/EmptyState';
 import { type Reunificacion, type CerrarCasoDto, EstadoReunificacion } from '../types';
 import { reunificacionesApi, consultaApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('es-CL', {
@@ -26,6 +27,7 @@ export function ReunificacionesPage() {
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState('');
+  const { puedeRegistrar, puedeAnular } = useAuth();
 
   const handleSearch = async () => {
     if (!searchPlaca.trim()) return;
@@ -105,7 +107,7 @@ export function ReunificacionesPage() {
       key: 'acciones',
       header: '',
       render: (r: Reunificacion) =>
-        r.estado === EstadoReunificacion.PENDIENTE_RETIRO ? (
+        r.estado === EstadoReunificacion.PENDIENTE_RETIRO && (puedeRegistrar() || puedeAnular()) ? (
           <Button
             size="sm"
             onClick={(e) => {

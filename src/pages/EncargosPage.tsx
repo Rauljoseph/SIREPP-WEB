@@ -10,7 +10,8 @@ import { Table } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
 import { EmptyState } from '../components/ui/EmptyState';
 import { EstadoEncargo, TipoEvento, type Encargo, type CrearEncargoDto } from '../types';
-import { encargosApi } from '../services/api';
+import { encargosApi, consultaApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 // Error boundary para capturar errores de renderizado
 class EncargosErrorBoundary extends Component<
@@ -77,10 +78,11 @@ const initialForm: CrearEncargoDto = {
   denuncianteNombre: '',
   denuncianteEmail: '',
   fechaHecho: new Date().toISOString().split('T')[0],
-  unidadId: UNIDAD_DEMO_ID,
+  unidadId: '',
 };
 
 function EncargosPageContent() {
+  const { puedeRegistrar, puedeAnular, usuario } = useAuth();
   const [encargos, setEncargos] = useState<Encargo[]>([]);
   const [searchPlaca, setSearchPlaca] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -97,8 +99,8 @@ function EncargosPageContent() {
     setSearchLoading(true);
     setError('');
     try {
-      const results = await encargosApi.buscarPorPlaca(searchPlaca.toUpperCase().replace(/[-.\s]/g, ''));
-      setEncargos(results);
+      const estado = await consultaApi.estadoPlaca(searchPlaca.toUpperCase().replace(/[-.\s]/g, ''));
+      setEncargos(estado.encargo ? [estado.encargo] : []);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
       setError(e.response?.data?.message || 'Error al buscar encargos');
@@ -118,7 +120,7 @@ function EncargosPageContent() {
         denuncianteNombre: form.denuncianteNombre,
         denuncianteEmail: form.denuncianteEmail,
         fechaHecho: form.fechaHecho,
-        unidadId: form.unidadId,
+        unidadId: usuario.unidadId,
       } as CrearEncargoDto);
       setEncargos((prev) => [nuevoEncargo, ...prev]);
       setShowModal(false);
@@ -188,7 +190,7 @@ function EncargosPageContent() {
       key: 'acciones',
       header: '',
       render: (enc: Encargo) =>
-        enc.estado === EstadoEncargo.VIGENTE ? (
+        enc.estado === EstadoEncargo.VIGENTE && puedeAnular() ? (
           <Button
             variant="danger"
             size="sm"
@@ -210,9 +212,11 @@ function EncargosPageContent() {
         title="Encargos"
         description="Registro y gestión de encargos por sustracción de placas"
         action={
-          <Button onClick={() => setShowModal(true)}>
-            <Plus size={16} className="mr-1.5" /> Nuevo Encargo
-          </Button>
+          puedeRegistrar() ? (
+            <Button onClick={() => setShowModal(true)}>
+              <Plus size={16} className="mr-1.5" /> Nuevo Encargo
+            </Button>
+          ) : undefined
         }
       />
 
@@ -248,8 +252,8 @@ function EncargosPageContent() {
               icon={AlertTriangle}
               title="Sin encargos"
               description="Busque una placa o registre un nuevo encargo para comenzar."
-              actionLabel="Nuevo Encargo"
-              onAction={() => setShowModal(true)}
+              actionLabel={puedeRegistrar() ? "Nuevo Encargo" : undefined}
+              onAction={puedeRegistrar() ? () => setShowModal(true) : undefined}
             />
           ) : (
             <Table

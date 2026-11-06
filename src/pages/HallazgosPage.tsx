@@ -11,6 +11,7 @@ import { Modal } from '../components/ui/Modal';
 import { EmptyState } from '../components/ui/EmptyState';
 import { EstadoFisico, type Hallazgo, type CrearHallazgoDto } from '../types';
 import { hallazgosApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const UNIDAD_DEMO_ID = '11111111-1111-1111-1111-111111111111';
 
@@ -39,6 +40,7 @@ const initialForm: CrearHallazgoDto = {
 };
 
 export function HallazgosPage() {
+  const { puedeRegistrar, usuario } = useAuth();
   const [hallazgos, setHallazgos] = useState<Hallazgo[]>([]);
   const [searchPlaca, setSearchPlaca] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -70,7 +72,7 @@ export function HallazgosPage() {
         placa: form.placa.toUpperCase().replace(/[-.\s]/g, ''),
         estadoFisico: form.estadoFisico,
         observaciones: form.observaciones || undefined,
-        unidadId: form.unidadId,
+        unidadId: usuario.unidadId,
       } as CrearHallazgoDto);
       setHallazgos((prev) => [nuevo, ...prev]);
       setShowModal(false);
@@ -122,9 +124,11 @@ export function HallazgosPage() {
         title="Hallazgos"
         description="Registro de placas encontradas en operativos y fiscalizaciones"
         action={
-          <Button onClick={() => setShowModal(true)}>
-            <Plus size={16} className="mr-1.5" /> Nuevo Hallazgo
-          </Button>
+          puedeRegistrar() ? (
+            <Button onClick={() => setShowModal(true)}>
+              <Plus size={16} className="mr-1.5" /> Nuevo Hallazgo
+            </Button>
+          ) : undefined
         }
       />
 
@@ -158,8 +162,8 @@ export function HallazgosPage() {
               icon={FileSearch}
               title="Sin hallazgos"
               description="Busque una placa o registre un nuevo hallazgo."
-              actionLabel="Nuevo Hallazgo"
-              onAction={() => setShowModal(true)}
+              actionLabel={puedeRegistrar() ? "Nuevo Hallazgo" : undefined}
+              onAction={puedeRegistrar() ? () => setShowModal(true) : undefined}
             />
           ) : (
             <Table columns={columns} data={hallazgos} keyExtractor={(h) => h.id} />
