@@ -95,42 +95,26 @@ export function ConsultaPage() {
             {/* Status Banner */}
             <Card>
               <div className="flex items-center gap-4">
-                {resultado.resumen.tieneEncargoVigente ? (
+                {resultado.encargo?.estado === 'VIGENTE' ? (
                   <>
                     <div className="p-3 rounded-xl bg-red-100">
                       <ShieldAlert size={28} className="text-red-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-red-700">
-                        Placa con encargo vigente
-                      </h3>
-                      <p className="text-sm text-red-600">
-                        La placa <span className="font-mono font-bold">{resultado.placa}</span> tiene un encargo activo en el sistema.
-                      </p>
+                      <h3 className="text-lg font-bold text-red-700">Placa con encargo vigente</h3>
+                      <p className="text-sm text-red-600">{resultado.resumen}</p>
                     </div>
                   </>
-                ) : resultado.resumen.estaCerrada ? (
-                  <>
-                    <div className="p-3 rounded-xl bg-green-100">
-                      <ShieldCheck size={28} className="text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-green-700">Caso cerrado</h3>
-                      <p className="text-sm text-green-600">
-                        La placa <span className="font-mono font-bold">{resultado.placa}</span> fue entregada al propietario.
-                      </p>
-                    </div>
-                  </>
-                ) : resultado.resumen.estaReunificada ? (
+                ) : resultado.reunificacion ? (
                   <>
                     <div className="p-3 rounded-xl bg-blue-100">
                       <ShieldCheck size={28} className="text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-blue-700">Placa reunificada</h3>
-                      <p className="text-sm text-blue-600">
-                        La placa <span className="font-mono font-bold">{resultado.placa}</span> fue reunificada. Pendiente de entrega.
-                      </p>
+                      <h3 className="text-lg font-bold text-blue-700">
+                        {resultado.reunificacion.estado === 'ENTREGADO' ? 'Caso cerrado' : 'Placa reunificada'}
+                      </h3>
+                      <p className="text-sm text-blue-600">{resultado.resumen}</p>
                     </div>
                   </>
                 ) : (
@@ -140,9 +124,7 @@ export function ConsultaPage() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-gray-700">Sin encargo vigente</h3>
-                      <p className="text-sm text-gray-500">
-                        La placa <span className="font-mono font-bold">{resultado.placa}</span> no tiene encargos activos.
-                      </p>
+                      <p className="text-sm text-gray-500">{resultado.resumen}</p>
                     </div>
                   </>
                 )}

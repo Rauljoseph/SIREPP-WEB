@@ -278,7 +278,6 @@ function EncargosPageContent() {
               onChange={(e) => updateForm('tipoEvento', e.target.value)}
               options={[
                 { value: 'ROBO', label: 'Robo' },
-                { value: 'HURTO', label: 'Hurto' },
                 { value: 'EXTRAVIO', label: 'Extravío' },
               ]}
             />

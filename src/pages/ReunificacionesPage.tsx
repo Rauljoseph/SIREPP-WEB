@@ -33,7 +33,7 @@ export function ReunificacionesPage() {
     setError('');
     try {
       const estado = await consultaApi.estadoPlaca(searchPlaca.toUpperCase().replace(/[-.\s]/g, ''));
-      setReunificaciones(estado.reunificaciones || []);
+      setReunificaciones(estado.reunificacion ? [estado.reunificacion] : []);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
       setError(e.response?.data?.message || 'Error al buscar');
@@ -47,10 +47,12 @@ export function ReunificacionesPage() {
     setLoading(true);
     setError('');
     try {
-      const updated = await reunificacionesApi.cerrarCaso(selectedReunificacion.id, form);
-      setReunificaciones((prev) =>
-        prev.map((r) => (r.id === updated.id ? updated : r))
-      );
+      await reunificacionesApi.cerrarCaso(selectedReunificacion.id, form);
+      // Refrescar datos buscando la placa de nuevo
+      if (searchPlaca.trim()) {
+        const estado = await consultaApi.estadoPlaca(searchPlaca.toUpperCase().replace(/[-.\s]/g, ''));
+        setReunificaciones(estado.reunificacion ? [estado.reunificacion] : []);
+      }
       setShowModal(false);
       setForm({ receptorRut: '', receptorNombre: '' });
       setSelectedReunificacion(null);
@@ -74,15 +76,20 @@ export function ReunificacionesPage() {
       key: 'estado',
       header: 'Estado',
       render: (r: Reunificacion) => (
-        <Badge variant={r.estado === EstadoReunificacion.ENTREGADO ? 'success' : 'warning'}>
-          {r.estado === EstadoReunificacion.ENTREGADO ? 'Entregado' : 'Pendiente'}
+        <Badge variant={r.estado === EstadoReunificacion.ENTREGADA ? 'success' : 'warning'}>
+          {r.estado === EstadoReunificacion.ENTREGADA ? 'Entregada' : 'Pendiente de Retiro'}
         </Badge>
       ),
     },
     {
-      key: 'receptorNombre',
+      key: 'receptor',
       header: 'Receptor',
-      render: (r: Reunificacion) => r.receptorNombre || '—',
+      render: (r: Reunificacion) => r.receptorNombre ? (
+        <div>
+          <p className="text-sm text-gray-700">{r.receptorNombre}</p>
+          <p className="text-xs text-gray-400">{r.receptorRut}</p>
+        </div>
+      ) : '—',
     },
     {
       key: 'fechaEntrega',
@@ -90,15 +97,15 @@ export function ReunificacionesPage() {
       render: (r: Reunificacion) => r.fechaEntrega ? formatDate(r.fechaEntrega) : '—',
     },
     {
-      key: 'createdAt',
+      key: 'fechaConciliacion',
       header: 'Fecha Reunificación',
-      render: (r: Reunificacion) => formatDate(r.createdAt),
+      render: (r: Reunificacion) => r.fechaConciliacion ? formatDate(r.fechaConciliacion) : '—',
     },
     {
       key: 'acciones',
       header: '',
       render: (r: Reunificacion) =>
-        r.estado === EstadoReunificacion.PENDIENTE ? (
+        r.estado === EstadoReunificacion.PENDIENTE_RETIRO ? (
           <Button
             size="sm"
             onClick={(e) => {

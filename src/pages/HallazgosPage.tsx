@@ -23,9 +23,8 @@ const estadoFisicoLabels: Record<string, string> = {
 
 const estadoFisicoBadge: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
   BUENO: 'success',
-  REGULAR: 'warning',
-  MALO: 'danger',
-  DESARMADO: 'danger',
+  DETERIORADO: 'warning',
+  ILEGIBLE: 'danger',
 };
 
 function formatDate(d: string) {
@@ -185,9 +184,8 @@ export function HallazgosPage() {
               onChange={(e) => setForm((p) => ({ ...p, estadoFisico: e.target.value as EstadoFisico }))}
               options={[
                 { value: 'BUENO', label: 'Bueno' },
-                { value: 'REGULAR', label: 'Regular' },
-                { value: 'MALO', label: 'Malo' },
-                { value: 'DESARMADO', label: 'Desarmado' },
+                { value: 'DETERIORADO', label: 'Deteriorado' },
+                { value: 'ILEGIBLE', label: 'Ilegible' },
               ]}
             />
           </div>

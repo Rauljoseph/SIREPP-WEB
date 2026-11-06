@@ -20,8 +20,8 @@ export enum EstadoFisico {
 }
 
 export enum EstadoReunificacion {
-  PENDIENTE = 'PENDIENTE',
-  ENTREGADO = 'ENTREGADO',
+  PENDIENTE_RETIRO = 'PENDIENTE_RETIRO',
+  ENTREGADA = 'ENTREGADA',
 }
 
 export enum TipoNotificacion {
@@ -89,6 +89,7 @@ export interface Reunificacion {
   estado: EstadoReunificacion;
   receptorRut?: string;
   receptorNombre?: string;
+  fechaConciliacion: string;
   fechaEntrega?: string;
   encargo?: Encargo;
   hallazgo?: Hallazgo;
@@ -121,11 +122,7 @@ export interface EstadoPlaca {
   encargo: Encargo | null;
   hallazgos: Hallazgo[];
   reunificacion: Reunificacion | null;
-  resumen: {
-    tieneEncargoVigente: boolean;
-    estaReunificada: boolean;
-    estaCerrada: boolean;
-  };
+  resumen: string;
 }
 
 // ── DTOs ───────────────────────────────────────────────
