@@ -190,7 +190,7 @@ function EncargosPageContent() {
       render: (enc: Encargo) =>
         enc.estado === EstadoEncargo.VIGENTE ? (
           <Button
-            variant="ghost"
+            variant="danger"
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
@@ -278,6 +278,7 @@ function EncargosPageContent() {
               onChange={(e) => updateForm('tipoEvento', e.target.value)}
               options={[
                 { value: 'ROBO', label: 'Robo' },
+                { value: 'HURTO', label: 'Hurto' },
                 { value: 'EXTRAVIO', label: 'Extravío' },
               ]}
             />
