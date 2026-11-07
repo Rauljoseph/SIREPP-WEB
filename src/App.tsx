@@ -10,6 +10,7 @@ import { ConsultaPage } from './pages/ConsultaPage';
 import { LecturasPage } from './pages/LecturasPage';
 import { AdminPage } from './pages/AdminPage';
 import { Rol } from './types';
+import AuditoriaPage from "./pages/auditoriaPage.tsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,6 +29,14 @@ function AdminRoute() {
   return <AdminPage />;
 }
 
+function AuditoriaRoute() {
+  const { usuario } = useAuth();
+  if (usuario.rol !== Rol.ADMIN) {
+    return <Navigate to="/" replace />;
+  }
+  return <AuditoriaPage />;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -42,6 +51,7 @@ function App() {
               <Route path="/consulta" element={<ConsultaPage />} />
               <Route path="/lecturas" element={<LecturasPage />} />
               <Route path="/admin" element={<AdminRoute />} />
+              <Route path="/auditoria" element={<AuditoriaRoute />} />
             </Route>
           </Routes>
         </BrowserRouter>

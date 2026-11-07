@@ -173,4 +173,36 @@ export const adminApi = {
     api.delete(`/admin/usuarios/${id}`).then((r) => r.data),
 };
 
+// ─── AUDITORÍA ──────────────────────────────────
+export const auditApi = {
+  listar: async (params?: { entidad?: string; accion?: string; desde?: string; hasta?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.entidad) query.set('entidad', params.entidad);
+    if (params?.accion) query.set('accion', params.accion);
+    if (params?.desde) query.set('desde', params.desde);
+    if (params?.hasta) query.set('hasta', params.hasta);
+    const res = await api.get(`/audit?${query.toString()}`);
+    return res.data;
+  },
+  resumen: async () => {
+    const res = await api.get('/audit/resumen');
+    return res.data;
+  },
+};
+
+// ─── EVENTOS DE DOMINIO ─────────────────────────
+export const eventosApi = {
+  listar: async (params?: { tipo?: string; procesado?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.tipo) query.set('tipo', params.tipo);
+    if (params?.procesado) query.set('procesado', params.procesado);
+    const res = await api.get(`/eventos?${query.toString()}`);
+    return res.data;
+  },
+  resumen: async () => {
+    const res = await api.get('/eventos/resumen');
+    return res.data;
+  },
+};
+
 export default api;
