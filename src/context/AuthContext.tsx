@@ -12,7 +12,7 @@ export interface UsuarioMock {
 
 const USUARIOS_MOCK: Record<Rol, UsuarioMock> = {
   [Rol.ADMIN]: {
-    id: 'a0000000-0000-0000-0000-000000000001',
+    id: '00000000-0000-0000-0000-000000000001',
     nombre: 'Admin Sistema',
     email: 'admin@sirepp.cl',
     rol: Rol.ADMIN,
@@ -20,7 +20,7 @@ const USUARIOS_MOCK: Record<Rol, UsuarioMock> = {
     iniciales: 'AS',
   },
   [Rol.SUPERVISOR]: {
-    id: 's0000000-0000-0000-0000-000000000002',
+    id: '00000000-0000-0000-0000-000000000002',
     nombre: 'Carlos Muñoz',
     email: 'carlos.munoz@sirepp.cl',
     rol: Rol.SUPERVISOR,
@@ -28,7 +28,7 @@ const USUARIOS_MOCK: Record<Rol, UsuarioMock> = {
     iniciales: 'CM',
   },
   [Rol.FUNCIONARIO]: {
-    id: 'f0000000-0000-0000-0000-000000000003',
+    id: '00000000-0000-0000-0000-000000000003',
     nombre: 'María López',
     email: 'maria.lopez@sirepp.cl',
     rol: Rol.FUNCIONARIO,
@@ -36,7 +36,7 @@ const USUARIOS_MOCK: Record<Rol, UsuarioMock> = {
     iniciales: 'ML',
   },
   [Rol.GUARDIA]: {
-    id: 'g0000000-0000-0000-0000-000000000004',
+    id: '00000000-0000-0000-0000-000000000004',
     nombre: 'Pedro Soto',
     email: 'pedro.soto@sirepp.cl',
     rol: Rol.GUARDIA,

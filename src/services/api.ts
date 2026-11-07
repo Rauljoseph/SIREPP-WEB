@@ -27,8 +27,8 @@ export const encargosApi = {
   buscarPorPlaca: (placa: string) =>
     api.get<Encargo[]>(`/encargos/placa/${placa}`).then((r) => r.data),
 
-  anular: (id: string, motivo: string) =>
-    api.patch<Encargo>(`/encargos/${id}/anular`, { motivo }).then((r) => r.data),
+  anular: (id: string, motivo: string, supervisorId: string) =>
+    api.patch<Encargo>(`/encargos/${id}/anular`, { motivo, supervisorId }).then((r) => r.data),
 };
 
 // ── Hallazgos ──────────────────────────────────────────
