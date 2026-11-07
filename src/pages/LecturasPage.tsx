@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Radio, Plus } from 'lucide-react';
+import { Radio, Plus, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -17,12 +17,26 @@ function formatDate(d: string) {
   });
 }
 
+const PORTICOS_SIMULADOS = [
+  'Autopista Central - KM 15 Norte',
+  'Autopista Central - KM 32 Sur',
+  'Costanera Norte - Peaje Lo Echevers',
+  'Vespucio Norte Express - KM 8',
+  'Ruta 5 Sur - Peaje Angostura',
+  'Autopista Los Libertadores - KM 12',
+];
+
 const initialForm: LecturaPorticoDto = {
   placa: '',
-  portico: '',
+  portico: PORTICOS_SIMULADOS[0],
   nivelConfianza: 0.85,
   timestampLectura: new Date().toISOString(),
 };
+
+interface ResultadoLectura {
+  tipo: 'exito' | 'sin_encargo' | 'bajo_umbral';
+  mensaje: string;
+}
 
 export function LecturasPage() {
   const [lecturas, setLecturas] = useState<EventoLectura[]>([]);
@@ -30,17 +44,41 @@ export function LecturasPage() {
   const [form, setForm] = useState<LecturaPorticoDto>(initialForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resultado, setResultado] = useState<ResultadoLectura | null>(null);
 
   const handleRegistrar = async () => {
     setLoading(true);
     setError('');
+    setResultado(null);
     try {
-      const nueva = await lecturaApi.registrar({
+      const respuesta = await lecturaApi.registrar({
         ...form,
         placa: form.placa.toUpperCase().replace(/[-.\s]/g, ''),
         timestampLectura: new Date().toISOString(),
       });
-      setLecturas((prev) => [nueva, ...prev]);
+
+      if (!respuesta.registrada) {
+        // No hay encargo vigente para esa placa
+        setResultado({
+          tipo: 'sin_encargo',
+          mensaje: `La placa ${form.placa.toUpperCase()} no tiene encargo vigente. No se registró lectura.`,
+        });
+      } else if (respuesta.notificado) {
+        // Lectura registrada + correo enviado
+        setLecturas((prev) => [respuesta as EventoLectura, ...prev]);
+        setResultado({
+          tipo: 'exito',
+          mensaje: `Placa detectada con encargo vigente. Se notificó al denunciante por correo.`,
+        });
+      } else {
+        // Lectura registrada pero sin notificación (bajo umbral o error de correo)
+        setLecturas((prev) => [respuesta as EventoLectura, ...prev]);
+        setResultado({
+          tipo: 'bajo_umbral',
+          mensaje: respuesta.motivo || 'Lectura registrada sin notificación.',
+        });
+      }
+
       setShowModal(false);
       setForm(initialForm);
     } catch (err: unknown) {
@@ -98,7 +136,7 @@ export function LecturasPage() {
     <div>
       <Header
         title="Lecturas de Pórtico"
-        description="Simulación de detecciones automáticas de placas en pórticos"
+        description="Simulación de detecciones automáticas de placas en pórticos de autopistas"
         action={
           <Button onClick={() => setShowModal(true)}>
             <Plus size={16} className="mr-1.5" /> Simular Lectura
@@ -113,12 +151,30 @@ export function LecturasPage() {
           </div>
         )}
 
+        {/* Feedback del resultado */}
+        {resultado && (
+          <div className={`border rounded-lg px-4 py-3 text-sm flex items-start gap-2 ${
+            resultado.tipo === 'exito'
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : resultado.tipo === 'sin_encargo'
+                ? 'bg-gray-50 border-gray-200 text-gray-600'
+                : 'bg-yellow-50 border-yellow-200 text-yellow-700'
+          }`}>
+            {resultado.tipo === 'exito' ? (
+              <CheckCircle size={16} className="mt-0.5 shrink-0" />
+            ) : (
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+            )}
+            {resultado.mensaje}
+          </div>
+        )}
+
         <Card padding={false}>
           {lecturas.length === 0 ? (
             <EmptyState
               icon={Radio}
               title="Sin lecturas"
-              description="Simule una lectura de pórtico para ver cómo el sistema detecta y notifica coincidencias con encargos vigentes."
+              description="Simule una lectura de pórtico para ver cómo el sistema detecta placas con encargo vigente y notifica automáticamente al denunciante."
               actionLabel="Simular Lectura"
               onAction={() => setShowModal(true)}
             />
@@ -134,11 +190,13 @@ export function LecturasPage() {
               <Radio size={18} className="text-blue-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-700">Funcionamiento del módulo de trazabilidad</p>
+              <p className="text-sm font-medium text-gray-700">¿Cómo funciona el módulo de trazabilidad?</p>
               <p className="text-sm text-gray-500 mt-1">
-                Cuando un pórtico detecta una placa con encargo vigente y el nivel de confianza
-                supera el umbral (75%), el sistema genera automáticamente una notificación al
-                denunciante registrado en el encargo.
+                Los pórticos TAG de las autopistas envían un evento cada vez que leen una placa.
+                SIREPP está escuchando (observer) y cuando detecta que la placa tiene un encargo
+                vigente con confianza superior al 75%, envía automáticamente un correo al denunciante
+                informándole del avistamiento. Si el correo falla, reintenta 3 veces antes de
+                marcarlo para reintento manual.
               </p>
             </div>
           </div>
@@ -153,13 +211,20 @@ export function LecturasPage() {
             placeholder="BBCC12"
             value={form.placa}
             onChange={(e) => setForm((p) => ({ ...p, placa: e.target.value }))}
+            helperText="Ingrese la placa que el pórtico habría detectado"
           />
-          <Input
-            label="Pórtico *"
-            placeholder="Ej: Autopista Central KM 15"
-            value={form.portico}
-            onChange={(e) => setForm((p) => ({ ...p, portico: e.target.value }))}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Pórtico *</label>
+            <select
+              value={form.portico}
+              onChange={(e) => setForm((p) => ({ ...p, portico: e.target.value }))}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {PORTICOS_SIMULADOS.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nivel de Confianza: {(form.nivelConfianza * 100).toFixed(0)}%
@@ -187,9 +252,9 @@ export function LecturasPage() {
             <Button
               onClick={handleRegistrar}
               loading={loading}
-              disabled={!form.placa.trim() || !form.portico.trim()}
+              disabled={!form.placa.trim()}
             >
-              Registrar Lectura
+              Enviar Lectura
             </Button>
           </div>
         </div>
