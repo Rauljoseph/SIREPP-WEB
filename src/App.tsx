@@ -1,6 +1,6 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { EncargosPage } from './pages/EncargosPage';
@@ -8,6 +8,8 @@ import { HallazgosPageWithBoundary as HallazgosPage } from './pages/HallazgosPag
 import { ReunificacionesPage } from './pages/ReunificacionesPage';
 import { ConsultaPage } from './pages/ConsultaPage';
 import { LecturasPage } from './pages/LecturasPage';
+import { AdminPage } from './pages/AdminPage';
+import { Rol } from './types';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,6 +19,14 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function AdminRoute() {
+  const { usuario } = useAuth();
+  if (usuario.rol !== Rol.ADMIN) {
+    return <Navigate to="/" replace />;
+  }
+  return <AdminPage />;
+}
 
 function App() {
   return (
@@ -31,6 +41,7 @@ function App() {
               <Route path="/reunificaciones" element={<ReunificacionesPage />} />
               <Route path="/consulta" element={<ConsultaPage />} />
               <Route path="/lecturas" element={<LecturasPage />} />
+              <Route path="/admin" element={<AdminRoute />} />
             </Route>
           </Routes>
         </BrowserRouter>

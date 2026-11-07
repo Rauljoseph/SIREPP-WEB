@@ -108,4 +108,69 @@ export const notificacionesApi = {
     api.post<{ exitosas: number; fallidas: number }>('/notificaciones/reintentar').then((r) => r.data),
 };
 
+// ── Administración ────────────────────────────────────
+export interface UnidadAdmin {
+  id: string;
+  nombre: string;
+  tipo: string;
+  direccion: string;
+  region: string;
+  comuna: string;
+  horarioAtencion: string | null;
+  telefono: string | null;
+  activa: boolean;
+  createdAt: string;
+  _count?: { usuarios: number };
+}
+
+export interface UsuarioAdmin {
+  id: string;
+  nombreCompleto: string;
+  email: string;
+  rol: string;
+  unidadId: string;
+  servicioActivo: boolean;
+  createdAt: string;
+  unidad?: { id: string; nombre: string };
+}
+
+export interface CrearUnidadAdminDto {
+  nombre: string;
+  tipo: string;
+  direccion: string;
+  region: string;
+  comuna: string;
+  horarioAtencion?: string;
+  telefono?: string;
+}
+
+export interface CrearUsuarioAdminDto {
+  nombreCompleto: string;
+  email: string;
+  rol: string;
+  unidadId: string;
+}
+
+export const adminApi = {
+  // Unidades
+  listarUnidades: () =>
+    api.get<UnidadAdmin[]>('/admin/unidades').then((r) => r.data),
+
+  crearUnidad: (data: CrearUnidadAdminDto) =>
+    api.post<UnidadAdmin>('/admin/unidades', data).then((r) => r.data),
+
+  eliminarUnidad: (id: string) =>
+    api.delete(`/admin/unidades/${id}`).then((r) => r.data),
+
+  // Usuarios
+  listarUsuarios: () =>
+    api.get<UsuarioAdmin[]>('/admin/usuarios').then((r) => r.data),
+
+  crearUsuario: (data: CrearUsuarioAdminDto) =>
+    api.post<UsuarioAdmin>('/admin/usuarios', data).then((r) => r.data),
+
+  eliminarUsuario: (id: string) =>
+    api.delete(`/admin/usuarios/${id}`).then((r) => r.data),
+};
+
 export default api;

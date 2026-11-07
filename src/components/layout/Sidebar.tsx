@@ -8,6 +8,7 @@ import {
   Radio,
   Shield,
   ChevronDown,
+  Settings,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -39,6 +40,8 @@ const rolColors: Record<Rol, string> = {
 export function Sidebar() {
   const { usuario, cambiarRol } = useAuth();
   const [showRolMenu, setShowRolMenu] = useState(false);
+
+  const esAdmin = usuario.rol === Rol.ADMIN;
 
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-64 bg-slate-800 text-white flex flex-col z-30">
@@ -76,6 +79,26 @@ export function Sidebar() {
             {item.label}
           </NavLink>
         ))}
+
+        {/* Solo visible para ADMIN */}
+        {esAdmin && (
+          <>
+            <div className="border-t border-white/10 my-3" />
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-white/15 text-white'
+                    : 'text-white/60 hover:text-white hover:bg-white/8'
+                }`
+              }
+            >
+              <Settings size={18} />
+              Administración
+            </NavLink>
+          </>
+        )}
       </nav>
 
       {/* User + Role Selector */}
@@ -121,7 +144,7 @@ export function Sidebar() {
                   </div>
                   <span>{rolLabels[rol]}</span>
                   {usuario.rol === rol && (
-                    <span className="ml-auto text-xs text-white/40">✓</span>
+                    <span className="ml-auto text-xs text-white/40">&check;</span>
                   )}
                 </button>
               ))}
