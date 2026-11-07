@@ -20,8 +20,8 @@ const estadoBadge: Record<string, { variant: 'success' | 'warning' | 'danger' | 
   REUNIFICADO: { variant: 'success', label: 'Reunificado' },
   ANULADO: { variant: 'neutral', label: 'Anulado' },
   CERRADO: { variant: 'info', label: 'Cerrado' },
-  PENDIENTE: { variant: 'warning', label: 'Pendiente' },
-  ENTREGADO: { variant: 'success', label: 'Entregado' },
+  PENDIENTE_RETIRO: { variant: 'warning', label: 'Pendiente' },
+  ENTREGADA: { variant: 'success', label: 'Entregada' },
 };
 
 export function ConsultaPage() {
@@ -112,7 +112,7 @@ export function ConsultaPage() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-blue-700">
-                        {resultado.reunificacion.estado === 'ENTREGADO' ? 'Caso cerrado' : 'Placa reunificada'}
+                        {resultado.reunificacion.estado === 'ENTREGADA' ? 'Caso cerrado' : 'Placa reunificada'}
                       </h3>
                       <p className="text-sm text-blue-600">{resultado.resumen}</p>
                     </div>

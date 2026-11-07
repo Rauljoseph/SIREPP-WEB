@@ -63,16 +63,16 @@ export function LecturasPage() {
           tipo: 'sin_encargo',
           mensaje: `La placa ${form.placa.toUpperCase()} no tiene encargo vigente. No se registró lectura.`,
         });
-      } else if (respuesta.notificado) {
+      } else if (respuesta.notificada) {
         // Lectura registrada + correo enviado
-        setLecturas((prev) => [respuesta as EventoLectura, ...prev]);
+        setLecturas((prev) => [respuesta, ...prev]);
         setResultado({
           tipo: 'exito',
           mensaje: `Placa detectada con encargo vigente. Se notificó al denunciante por correo.`,
         });
       } else {
         // Lectura registrada pero sin notificación (bajo umbral o error de correo)
-        setLecturas((prev) => [respuesta as EventoLectura, ...prev]);
+        setLecturas((prev) => [respuesta, ...prev]);
         setResultado({
           tipo: 'bajo_umbral',
           mensaje: respuesta.motivo || 'Lectura registrada sin notificación.',

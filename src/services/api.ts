@@ -12,7 +12,7 @@ import type {
 } from '../types';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -56,9 +56,15 @@ export const consultaApi = {
 };
 
 // ── Trazabilidad ───────────────────────────────────────
+export interface RespuestaLectura extends EventoLectura {
+  registrada: boolean;
+  notificada: boolean;
+  motivo: string | null;
+}
+
 export const lecturaApi = {
   registrar: (data: LecturaPorticoDto) =>
-    api.post<EventoLectura>('/lecturas', data).then((r) => r.data),
+    api.post<RespuestaLectura>('/lecturas', data).then((r) => r.data),
 };
 
 // ── Dashboard ──────────────────────────────────────────

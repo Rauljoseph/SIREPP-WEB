@@ -51,9 +51,6 @@ class EncargosErrorBoundary extends Component<
   }
 }
 
-const UNIDAD_DEMO_ID = '11111111-1111-1111-1111-111111111111';
-const FUNCIONARIO_DEMO_ID = '00000000-0000-0000-0000-000000000000';
-
 const estadoBadge: Record<string, { variant: 'success' | 'warning' | 'danger' | 'neutral'; label: string }> = {
   VIGENTE: { variant: 'warning', label: 'Vigente' },
   REUNIFICADO: { variant: 'success', label: 'Reunificado' },
