@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Building2, Users, Plus, Trash2, Loader2 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -62,109 +63,89 @@ const initialUsuarioForm: CrearUsuarioAdminDto = {
 type Tab = 'unidades' | 'usuarios';
 
 export function AdminPage() {
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('unidades');
 
-  // ── Estado Unidades ─────────────────────────────────
-  const [unidades, setUnidades] = useState<UnidadAdmin[]>([]);
-  const [loadingUnidades, setLoadingUnidades] = useState(true);
+  // ── Modals ─────────────────────────────────────────
   const [showUnidadModal, setShowUnidadModal] = useState(false);
   const [unidadForm, setUnidadForm] = useState(initialUnidadForm);
-  const [savingUnidad, setSavingUnidad] = useState(false);
-
-  // ── Estado Usuarios ─────────────────────────────────
-  const [usuarios, setUsuarios] = useState<UsuarioAdmin[]>([]);
-  const [loadingUsuarios, setLoadingUsuarios] = useState(true);
   const [showUsuarioModal, setShowUsuarioModal] = useState(false);
   const [usuarioForm, setUsuarioForm] = useState(initialUsuarioForm);
-  const [savingUsuario, setSavingUsuario] = useState(false);
-
   const [error, setError] = useState('');
 
-  // ── Cargar datos ────────────────────────────────────
-  useEffect(() => {
-    cargarUnidades();
-    cargarUsuarios();
-  }, []);
+  // ── Queries — sin destructuring de default ─────────
+  const unidadesQuery = useQuery<UnidadAdmin[]>({
+    queryKey: ['admin-unidades'],
+    queryFn: () => adminApi.listarUnidades(),
+  });
 
-  async function cargarUnidades() {
-    setLoadingUnidades(true);
-    try {
-      const data = await adminApi.listarUnidades();
-      setUnidades(data);
-    } catch {
-      setError('Error al cargar unidades');
-    } finally {
-      setLoadingUnidades(false);
-    }
-  }
+  const usuariosQuery = useQuery<UsuarioAdmin[]>({
+    queryKey: ['admin-usuarios'],
+    queryFn: () => adminApi.listarUsuarios(),
+  });
 
-  async function cargarUsuarios() {
-    setLoadingUsuarios(true);
-    try {
-      const data = await adminApi.listarUsuarios();
-      setUsuarios(data);
-    } catch {
-      setError('Error al cargar usuarios');
-    } finally {
-      setLoadingUsuarios(false);
-    }
-  }
+  // Datos y contadores directamente del query
+  const unidades = unidadesQuery.data ?? [];
+  const usuarios = usuariosQuery.data ?? [];
 
-  // ── Crear Unidad ────────────────────────────────────
-  async function handleCrearUnidad() {
-    setSavingUnidad(true);
-    setError('');
-    try {
-      await adminApi.crearUnidad(unidadForm);
+  // ── Mutations ──────────────────────────────────────
+  const crearUnidadMut = useMutation({
+    mutationFn: (dto: CrearUnidadAdminDto) => adminApi.crearUnidad(dto),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-unidades'] });
       setShowUnidadModal(false);
       setUnidadForm(initialUnidadForm);
-      await cargarUnidades();
-    } catch (err: unknown) {
+    },
+    onError: (err: unknown) => {
       const e = err as { response?: { data?: { message?: string } } };
       setError(e.response?.data?.message || 'Error al crear unidad');
-    } finally {
-      setSavingUnidad(false);
-    }
-  }
+    },
+  });
 
-  // ── Crear Usuario ───────────────────────────────────
-  async function handleCrearUsuario() {
-    setSavingUsuario(true);
-    setError('');
-    try {
-      await adminApi.crearUsuario(usuarioForm);
+  const crearUsuarioMut = useMutation({
+    mutationFn: (dto: CrearUsuarioAdminDto) => adminApi.crearUsuario(dto),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-usuarios'] });
       setShowUsuarioModal(false);
       setUsuarioForm(initialUsuarioForm);
-      await cargarUsuarios();
-    } catch (err: unknown) {
+    },
+    onError: (err: unknown) => {
       const e = err as { response?: { data?: { message?: string } } };
       setError(e.response?.data?.message || 'Error al crear usuario');
-    } finally {
-      setSavingUsuario(false);
-    }
-  }
+    },
+  });
 
-  // ── Eliminar ────────────────────────────────────────
-  async function handleEliminarUnidad(id: string) {
-    if (!confirm('¿Estás seguro de eliminar esta unidad?')) return;
-    try {
-      await adminApi.eliminarUnidad(id);
-      await cargarUnidades();
-    } catch (err: unknown) {
+  const eliminarUnidadMut = useMutation({
+    mutationFn: (id: string) => adminApi.eliminarUnidad(id),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-unidades'] });
+    },
+    onError: (err: unknown) => {
       const e = err as { response?: { data?: { message?: string } } };
-      setError(e.response?.data?.message || 'Error al eliminar unidad. Puede tener usuarios asociados.');
-    }
-  }
+      setError(e.response?.data?.message || 'Error al eliminar unidad');
+    },
+  });
 
-  async function handleEliminarUsuario(id: string) {
-    if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
-    try {
-      await adminApi.eliminarUsuario(id);
-      await cargarUsuarios();
-    } catch (err: unknown) {
+  const eliminarUsuarioMut = useMutation({
+    mutationFn: (id: string) => adminApi.eliminarUsuario(id),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-usuarios'] });
+    },
+    onError: (err: unknown) => {
       const e = err as { response?: { data?: { message?: string } } };
       setError(e.response?.data?.message || 'Error al eliminar usuario');
-    }
+    },
+  });
+
+  // ── Handlers ───────────────────────────────────────
+  function handleEliminarUnidad(id: string) {
+    if (!confirm('¿Estás seguro de eliminar esta unidad?')) return;
+    eliminarUnidadMut.mutate(id);
+  }
+
+  function handleEliminarUsuario(id: string) {
+    if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
+    eliminarUsuarioMut.mutate(id);
   }
 
   // ── Columnas tablas ─────────────────────────────────
@@ -270,8 +251,11 @@ export function AdminPage() {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+        {/* Tabs — key fuerza rebuild del DOM cuando cambia la data */}
+        <div
+          key={`tabs-${unidadesQuery.dataUpdatedAt}-${usuariosQuery.dataUpdatedAt}`}
+          className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit"
+        >
           <button
             onClick={() => setTab('unidades')}
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -281,7 +265,8 @@ export function AdminPage() {
             }`}
           >
             <Building2 size={16} />
-            Unidades ({unidades.length})
+            <span>Unidades</span>
+            <span>({unidades.length})</span>
           </button>
           <button
             onClick={() => setTab('usuarios')}
@@ -292,14 +277,15 @@ export function AdminPage() {
             }`}
           >
             <Users size={16} />
-            Usuarios ({usuarios.length})
+            <span>Usuarios</span>
+            <span>({usuarios.length})</span>
           </button>
         </div>
 
         {/* Contenido */}
         {tab === 'unidades' ? (
           <Card padding={false}>
-            {loadingUnidades ? (
+            {unidadesQuery.isLoading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 size={24} className="animate-spin text-blue-700" />
                 <span className="ml-3 text-gray-500">Cargando unidades...</span>
@@ -318,7 +304,7 @@ export function AdminPage() {
           </Card>
         ) : (
           <Card padding={false}>
-            {loadingUsuarios ? (
+            {usuariosQuery.isLoading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 size={24} className="animate-spin text-blue-700" />
                 <span className="ml-3 text-gray-500">Cargando usuarios...</span>
@@ -399,8 +385,8 @@ export function AdminPage() {
               Cancelar
             </Button>
             <Button
-              onClick={handleCrearUnidad}
-              loading={savingUnidad}
+              onClick={() => crearUnidadMut.mutate(unidadForm)}
+              loading={crearUnidadMut.isPending}
               disabled={!unidadForm.nombre.trim() || !unidadForm.direccion.trim() || !unidadForm.region.trim() || !unidadForm.comuna.trim()}
             >
               Crear Unidad
@@ -463,8 +449,8 @@ export function AdminPage() {
               Cancelar
             </Button>
             <Button
-              onClick={handleCrearUsuario}
-              loading={savingUsuario}
+              onClick={() => crearUsuarioMut.mutate(usuarioForm)}
+              loading={crearUsuarioMut.isPending}
               disabled={!usuarioForm.nombreCompleto.trim() || !usuarioForm.email.trim() || !usuarioForm.unidadId}
             >
               Crear Usuario
