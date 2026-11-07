@@ -9,6 +9,12 @@ import { EmptyState } from '../components/ui/EmptyState';
 import type { EstadoPlaca } from '../types';
 import { consultaApi } from '../services/api';
 
+// Validar formato de placa patente chilena: LLNNNN (antigua) o LLLLNN (nueva)
+function esPlacaValida(placa: string): boolean {
+  const limpia = placa.toUpperCase().replace(/[-.\s]/g, '');
+  return /^[A-Z]{2}\d{4}$/.test(limpia) || /^[A-Z]{4}\d{2}$/.test(limpia);
+}
+
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('es-CL', {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -33,11 +39,16 @@ export function ConsultaPage() {
 
   const handleSearch = async () => {
     if (!placa.trim()) return;
+    const placaLimpia = placa.toUpperCase().replace(/[-.\s]/g, '');
+    if (!esPlacaValida(placaLimpia)) {
+      setError('Formato de placa inválido. Use formato BBCC12 (nuevo) o BB1234 (antiguo)');
+      return;
+    }
     setLoading(true);
     setError('');
     setSearched(true);
     try {
-      const data = await consultaApi.estadoPlaca(placa.toUpperCase().replace(/[-.\s]/g, ''));
+      const data = await consultaApi.estadoPlaca(placaLimpia);
       setResultado(data);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };

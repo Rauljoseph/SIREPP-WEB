@@ -64,6 +64,12 @@ const tipoEventoLabels: Record<string, string> = {
   EXTRAVIO: 'Extravío',
 };
 
+// Validar formato de placa patente chilena: LLNNNN (antigua) o LLLLNN (nueva)
+function esPlacaValida(placa: string): boolean {
+  const limpia = placa.toUpperCase().replace(/[-.\s]/g, '');
+  return /^[A-Z]{2}\d{4}$/.test(limpia) || /^[A-Z]{4}\d{2}$/.test(limpia);
+}
+
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
 }
@@ -76,6 +82,9 @@ const initialForm: CrearEncargoDto = {
   denuncianteEmail: '',
   fechaHecho: new Date().toISOString().split('T')[0],
   unidadId: '',
+  canalNotificacion: 'EMAIL',
+  constanciaNumero: '',
+  observaciones: '',
 };
 
 function EncargosPageContent() {
@@ -93,10 +102,15 @@ function EncargosPageContent() {
 
   const handleSearch = async () => {
     if (!searchPlaca.trim()) return;
+    const placaLimpia = searchPlaca.toUpperCase().replace(/[-.\s]/g, '');
+    if (!esPlacaValida(placaLimpia)) {
+      setError('Formato de placa inválido. Use formato BBCC12 (nuevo) o BB1234 (antiguo)');
+      return;
+    }
     setSearchLoading(true);
     setError('');
     try {
-      const estado = await consultaApi.estadoPlaca(searchPlaca.toUpperCase().replace(/[-.\s]/g, ''));
+      const estado = await consultaApi.estadoPlaca(placaLimpia);
       setEncargos(estado.encargo ? [estado.encargo] : []);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
@@ -107,6 +121,11 @@ function EncargosPageContent() {
   };
 
   const handleCrear = async () => {
+    const placaLimpia = form.placa.toUpperCase().replace(/[-.\s]/g, '');
+    if (!esPlacaValida(placaLimpia)) {
+      setError('Formato de placa inválido. Use formato BBCC12 (nuevo) o BB1234 (antiguo)');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -118,6 +137,9 @@ function EncargosPageContent() {
         denuncianteEmail: form.denuncianteEmail,
         fechaHecho: form.fechaHecho,
         unidadId: usuario.unidadId,
+        canalNotificacion: form.canalNotificacion || 'EMAIL',
+        constanciaNumero: form.constanciaNumero || undefined,
+        observaciones: form.observaciones || undefined,
       } as CrearEncargoDto);
       setEncargos((prev) => [nuevoEncargo, ...prev]);
       setShowModal(false);
@@ -311,12 +333,33 @@ function EncargosPageContent() {
           </div>
 
           <div className="border-t border-gray-100 pt-4">
+            <p className="text-sm font-medium text-gray-700 mb-3">Detalles del Encargo</p>
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="Fecha del Hecho *"
                 type="date"
                 value={form.fechaHecho}
                 onChange={(e) => updateForm('fechaHecho', e.target.value)}
+              />
+              <Input
+                label="N° Constancia"
+                placeholder="C-2026-001234"
+                value={form.constanciaNumero || ''}
+                onChange={(e) => updateForm('constanciaNumero', e.target.value)}
+                helperText="Número de constancia policial (opcional)"
+              />
+            </div>
+            <p className="mt-3 text-xs text-gray-400">
+              Canal de notificación: Correo Electrónico
+            </p>
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+              <textarea
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                rows={3}
+                placeholder="Detalles adicionales sobre el encargo (opcional)"
+                value={form.observaciones || ''}
+                onChange={(e) => updateForm('observaciones', e.target.value)}
               />
             </div>
           </div>

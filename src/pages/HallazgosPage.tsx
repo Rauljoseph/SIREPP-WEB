@@ -28,6 +28,12 @@ const estadoFisicoBadge: Record<string, 'success' | 'warning' | 'danger' | 'neut
   ILEGIBLE: 'danger',
 };
 
+// Validar formato de placa patente chilena: LLNNNN (antigua) o LLLLNN (nueva)
+function esPlacaValida(placa: string): boolean {
+  const limpia = placa.toUpperCase().replace(/[-.\s]/g, '');
+  return /^[A-Z]{2}\d{4}$/.test(limpia) || /^[A-Z]{4}\d{2}$/.test(limpia);
+}
+
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
 }
@@ -51,10 +57,15 @@ export function HallazgosPage() {
 
   const handleSearch = async () => {
     if (!searchPlaca.trim()) return;
+    const placaLimpia = searchPlaca.toUpperCase().replace(/[-.\s]/g, '');
+    if (!esPlacaValida(placaLimpia)) {
+      setError('Formato de placa inválido. Use formato BBCC12 (nuevo) o BB1234 (antiguo)');
+      return;
+    }
     setSearchLoading(true);
     setError('');
     try {
-      const results = await hallazgosApi.buscarPorPlaca(searchPlaca.toUpperCase().replace(/[-.\s]/g, ''));
+      const results = await hallazgosApi.buscarPorPlaca(placaLimpia);
       setHallazgos(results);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
@@ -65,6 +76,11 @@ export function HallazgosPage() {
   };
 
   const handleCrear = async () => {
+    const placaLimpia = form.placa.toUpperCase().replace(/[-.\s]/g, '');
+    if (!esPlacaValida(placaLimpia)) {
+      setError('Formato de placa inválido. Use formato BBCC12 (nuevo) o BB1234 (antiguo)');
+      return;
+    }
     setLoading(true);
     setError('');
     try {

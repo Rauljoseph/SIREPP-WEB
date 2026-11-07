@@ -137,6 +137,8 @@ export interface CrearEncargoDto {
   fechaHecho: string;
   observaciones?: string;
   unidadId: string;
+  canalNotificacion: string,
+  constanciaNumero: string,
 }
 
 export interface CrearHallazgoDto {
