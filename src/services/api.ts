@@ -81,4 +81,25 @@ export const dashboardApi = {
     api.get<Reunificacion[]>('/dashboard/reunificaciones-recientes').then((r) => r.data),
 };
 
+// ── Notificaciones ─────────────────────────────────────
+export interface NotificacionFallida {
+  id: string;
+  destinatarioEmail: string;
+  tipo: string;
+  estado: string;
+  intentos: number;
+  resultado: string | null;
+  ultimoIntentoAt: string | null;
+  reunificacionId: string | null;
+  createdAt: string;
+}
+
+export const notificacionesApi = {
+  fallidas: () =>
+    api.get<{ total: number; notificaciones: NotificacionFallida[] }>('/notificaciones/fallidas').then((r) => r.data),
+
+  reintentar: () =>
+    api.post<{ exitosas: number; fallidas: number }>('/notificaciones/reintentar').then((r) => r.data),
+};
+
 export default api;
