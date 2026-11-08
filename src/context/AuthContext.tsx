@@ -1,53 +1,14 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { Rol } from '../types';
 
-export interface UsuarioMock {
+export interface UsuarioSesion {
   id: string;
-  nombre: string;
-  email: string;
   rol: Rol;
   unidadId: string;
-  iniciales: string;
 }
 
-const USUARIOS_MOCK: Record<Rol, UsuarioMock> = {
-  [Rol.ADMIN]: {
-    id: '00000000-0000-0000-0000-000000000001',
-    nombre: 'Admin Sistema',
-    email: 'admin@sirepp.cl',
-    rol: Rol.ADMIN,
-    unidadId: '11111111-1111-1111-1111-111111111111',
-    iniciales: 'AS',
-  },
-  [Rol.SUPERVISOR]: {
-    id: '00000000-0000-0000-0000-000000000002',
-    nombre: 'Carlos Muñoz',
-    email: 'carlos.munoz@sirepp.cl',
-    rol: Rol.SUPERVISOR,
-    unidadId: '11111111-1111-1111-1111-111111111111',
-    iniciales: 'CM',
-  },
-  [Rol.FUNCIONARIO]: {
-    id: '00000000-0000-0000-0000-000000000003',
-    nombre: 'María López',
-    email: 'maria.lopez@sirepp.cl',
-    rol: Rol.FUNCIONARIO,
-    unidadId: '11111111-1111-1111-1111-111111111111',
-    iniciales: 'ML',
-  },
-  [Rol.GUARDIA]: {
-    id: '00000000-0000-0000-0000-000000000004',
-    nombre: 'Pedro Soto',
-    email: 'pedro.soto@sirepp.cl',
-    rol: Rol.GUARDIA,
-    unidadId: '11111111-1111-1111-1111-111111111111',
-    iniciales: 'PS',
-  },
-};
-
 interface AuthContextType {
-  usuario: UsuarioMock;
-  cambiarRol: (rol: Rol) => void;
+  usuario: UsuarioSesion;
   puedeRegistrar: () => boolean;
   puedeAnular: () => boolean;
   puedeConsultar: () => boolean;
@@ -56,10 +17,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [rol, setRol] = useState<Rol>(Rol.GUARDIA);
-  const usuario = USUARIOS_MOCK[rol];
-
+export function AuthProvider({ children, usuario }: { children: ReactNode; usuario: UsuarioSesion }) {
   const puedeRegistrar = () => usuario.rol === Rol.GUARDIA;
   const puedeAnular = () => usuario.rol === Rol.SUPERVISOR;
   const puedeConsultar = () => true;
@@ -69,7 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         usuario,
-        cambiarRol: setRol,
         puedeRegistrar,
         puedeAnular,
         puedeConsultar,

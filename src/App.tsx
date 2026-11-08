@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth, type UsuarioSesion } from './context/AuthContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { EncargosPage } from './pages/EncargosPage';
@@ -37,9 +37,9 @@ function AuditoriaRoute() {
   return <AuditoriaPage />;
 }
 
-function App() {
+function App({ usuario }: { usuario: UsuarioSesion }) {
   return (
-    <AuthProvider>
+    <AuthProvider usuario={usuario}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <Routes>

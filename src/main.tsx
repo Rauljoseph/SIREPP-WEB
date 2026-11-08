@@ -6,6 +6,7 @@ import { isAxiosError } from 'axios'
 import { endSession, startSession } from './auth/keycloak'
 import api from './services/api'
 import { PantallaAcceso } from './auth/PantallaAcceso'
+import type { UsuarioSesion } from './context/AuthContext'
 
 // Fix React 19 + browser extensions (Migaku, translators, etc.)
 // Extensions modify the DOM and React 19 crashes on insertBefore/removeChild.
@@ -47,12 +48,12 @@ async function abrirSirepp() {
     const authenticated = await startSession()
     if (!authenticated) throw new Error('No se pudo iniciar sesión')
 
-    const response = await api.get('/auth/session', { timeout: 10000 })
-    if (response.status !== 204) throw new Error('No se pudo verificar el acceso')
+    const response = await api.get<UsuarioSesion>('/auth/session', { timeout: 10000 })
+    const usuario = response.data
 
     root.render(
       <StrictMode>
-        <App />
+        <App usuario={usuario} />
       </StrictMode>,
     )
   } catch (error) {
