@@ -174,7 +174,10 @@ export const adminApi = {
     api.get<UsuarioAdmin[]>('/admin/usuarios').then((r) => r.data),
 
   crearUsuario: (data: CrearUsuarioAdminDto) =>
-    api.post<UsuarioAdmin>('/admin/usuarios', data).then((r) => r.data),
+    api.post<UsuarioAdmin & { invitacionEnviada: boolean }>('/admin/usuarios', data).then((r) => r.data),
+
+  reenviarInvitacion: (id: string) =>
+    api.post(`/admin/usuarios/${id}/invitacion`),
 
   eliminarUsuario: (id: string) =>
     api.delete(`/admin/usuarios/${id}`).then((r) => r.data),
