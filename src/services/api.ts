@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { keycloak } from '../auth/keycloak';
 import type {
   Encargo,
   Hallazgo,
@@ -16,6 +17,12 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+api.interceptors.request.use(async (request) => {
+  await keycloak.updateToken(30);
+  request.headers.set('Authorization', 'Bearer ' + keycloak.token);
+  return request;
+});
+
 // ── Encargos ───────────────────────────────────────────
 export const encargosApi = {
   crear: (data: CrearEncargoDto) =>
@@ -27,8 +34,8 @@ export const encargosApi = {
   buscarPorPlaca: (placa: string) =>
     api.get<Encargo[]>(`/encargos/placa/${placa}`).then((r) => r.data),
 
-  anular: (id: string, motivo: string, supervisorId: string) =>
-    api.patch<Encargo>(`/encargos/${id}/anular`, { motivo, supervisorId }).then((r) => r.data),
+  anular: (id: string, motivo: string) =>
+    api.patch<Encargo>(`/encargos/${id}/anular`, { motivo }).then((r) => r.data),
 };
 
 // ── Hallazgos ──────────────────────────────────────────

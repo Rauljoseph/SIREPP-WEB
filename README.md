@@ -1,5 +1,30 @@
 # React + TypeScript + Vite
 
+## Ejecutar SIREPP Web
+
+Con la API y Keycloak en ejecución, instala las dependencias y arranca el frontend:
+
+```powershell
+npm ci
+npm run dev
+```
+
+Abre `http://localhost:5173`. Si usas otro puerto, autoriza ese origen y sus URLs de redirección en el cliente de Keycloak.
+
+### Variables de entorno
+
+Define las variables en `.env.local` para desarrollo o en el proyecto de Vercel antes de compilar el frontend.
+
+| Variable | Ejemplo local | Qué configurar en Vercel |
+| --- | --- | --- |
+| `VITE_API_URL` | `http://localhost:3000` | URL HTTPS de la API, sin el sufijo `/api` |
+| `VITE_KEYCLOAK_URL` | `http://localhost:8080` | URL HTTPS de Keycloak, sin el sufijo `/realms/...` |
+| `VITE_KEYCLOAK_REALM` | `sirepp` | Nombre del realm configurado |
+| `VITE_KEYCLOAK_CLIENT_ID` | `sirepp-web` | Client ID público del frontend |
+
+Estas variables son públicas para el navegador. Para configurar el realm, el segundo factor, el perfil y la recuperación por correo, consulta `keycloak/README.md` en el repositorio `SIREPP-API`.
+
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:

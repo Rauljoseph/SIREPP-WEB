@@ -156,7 +156,7 @@ function EncargosPageContent() {
     if (!selectedEncargo || !motivoAnulacion.trim()) return;
     setLoading(true);
     try {
-      const updated = await encargosApi.anular(selectedEncargo.id, motivoAnulacion, usuario.id);
+      const updated = await encargosApi.anular(selectedEncargo.id, motivoAnulacion);
       setEncargos((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
       setShowAnularModal(false);
       setMotivoAnulacion('');

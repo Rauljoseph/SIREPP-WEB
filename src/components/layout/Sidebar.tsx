@@ -1,3 +1,4 @@
+import { endSession, keycloak } from '../../auth/keycloak';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -165,6 +166,18 @@ export function Sidebar() {
             </div>
           )}
         </div>
+      </div>
+      <div className="border-t border-white/10 px-5 py-3">
+        <p className="truncate text-sm text-white/80">{keycloak.tokenParsed?.preferred_username}</p>
+        <button
+          type="button"
+          className="text-sm text-white/70 hover:text-white"
+          onClick={() => {
+            void endSession().catch(() => window.alert('No se pudo cerrar la sesión. Intenta nuevamente.'));
+          }}
+        >
+          Cerrar sesión
+        </button>
       </div>
     </aside>
   );
