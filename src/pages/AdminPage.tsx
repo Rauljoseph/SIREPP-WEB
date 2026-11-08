@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, Users, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Building2, Users, Plus, Trash2, Loader2, Mail } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -72,6 +72,9 @@ export function AdminPage() {
   const [showUsuarioModal, setShowUsuarioModal] = useState(false);
   const [usuarioForm, setUsuarioForm] = useState(initialUsuarioForm);
   const [error, setError] = useState('');
+  const [errorCorreo, setErrorCorreo] = useState('');
+  const [errorAlta, setErrorAlta] = useState('');
+  const [avisoInvitacion, setAvisoInvitacion] = useState('');
 
   // ── Queries — sin destructuring de default ─────────
   const unidadesQuery = useQuery<UnidadAdmin[]>({
@@ -104,14 +107,43 @@ export function AdminPage() {
 
   const crearUsuarioMut = useMutation({
     mutationFn: (dto: CrearUsuarioAdminDto) => adminApi.crearUsuario(dto),
-    onSettled: () => {
+    onMutate: () => {
+      setError('');
+      setErrorCorreo('');
+      setErrorAlta('');
+      setAvisoInvitacion('');
+    },
+    onSuccess: ({ invitacionEnviada }) => {
       queryClient.invalidateQueries({ queryKey: ['admin-usuarios'] });
       setShowUsuarioModal(false);
       setUsuarioForm(initialUsuarioForm);
+      if (invitacionEnviada) {
+        setAvisoInvitacion('Usuario creado e invitación enviada.');
+      } else {
+        setError('Usuario creado. El envío no se pudo confirmar. Reenvía la invitación desde la lista de usuarios.');
+      }
     },
     onError: (err: unknown) => {
+      const e = err as { response?: { status?: number; data?: { message?: string | string[] } } };
+      if (e.response?.status === 409) {
+        setErrorCorreo('Este correo electrónico ya está vinculado a una cuenta. Usa otro.');
+        return;
+      }
+      const mensaje = e.response?.data?.message;
+      setErrorAlta(Array.isArray(mensaje) ? mensaje.join('. ') : mensaje || 'Error al crear usuario');
+    },
+  });
+
+  const reenviarInvitacionMut = useMutation({
+    mutationFn: adminApi.reenviarInvitacion,
+    onMutate: () => {
+      setError('');
+      setAvisoInvitacion('');
+    },
+    onSuccess: () => setAvisoInvitacion('Invitación enviada.'),
+    onError: (err: unknown) => {
       const e = err as { response?: { data?: { message?: string } } };
-      setError(e.response?.data?.message || 'Error al crear usuario');
+      setError(e.response?.data?.message || 'Error al reenviar la invitación');
     },
   });
 
@@ -217,13 +249,25 @@ export function AdminPage() {
       key: 'acciones',
       header: '',
       render: (u: UsuarioAdmin) => (
-        <button
-          onClick={() => handleEliminarUsuario(u.id)}
-          className="text-red-400 hover:text-red-600 transition-colors p-1"
-          title="Eliminar"
-        >
-          <Trash2 size={16} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={reenviarInvitacionMut.isPending}
+            onClick={() => reenviarInvitacionMut.mutate(u.id)}
+            className="p-1 text-gray-500 hover:text-gray-800 disabled:opacity-50"
+            title="Reenviar invitación"
+            aria-label="Reenviar invitación"
+          >
+            <Mail size={16} />
+          </button>
+          <button
+            onClick={() => handleEliminarUsuario(u.id)}
+            className="text-red-400 hover:text-red-600 transition-colors p-1"
+            title="Eliminar"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       ),
     },
   ];
@@ -243,6 +287,11 @@ export function AdminPage() {
       />
 
       <div className="p-8 space-y-6">
+        {avisoInvitacion && (
+          <p role="status" className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700">
+            {avisoInvitacion}
+          </p>
+        )}
         {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 flex justify-between items-center">
@@ -405,10 +454,16 @@ export function AdminPage() {
             onChange={(e) => setUsuarioForm((p) => ({ ...p, nombreCompleto: e.target.value }))}
           />
           <Input
-            label="Email *"
+            label="Correo electrónico *"
+            type="email"
+            error={errorCorreo}
+            aria-invalid={Boolean(errorCorreo)}
             placeholder="juan.perez@carabineros.cl"
             value={usuarioForm.email}
-            onChange={(e) => setUsuarioForm((p) => ({ ...p, email: e.target.value }))}
+            onChange={(e) => {
+              setErrorCorreo('');
+              setUsuarioForm((p) => ({ ...p, email: e.target.value }));
+            }}
           />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Rol *</label>
@@ -444,6 +499,7 @@ export function AdminPage() {
             )}
           </div>
 
+          {errorAlta && <p role="alert" className="text-sm text-red-700">{errorAlta}</p>}
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
             <Button variant="secondary" onClick={() => setShowUsuarioModal(false)}>
               Cancelar
