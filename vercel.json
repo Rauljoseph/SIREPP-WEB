@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/:page(admin|auditoria|encargos|hallazgos|reunificaciones|consulta|lecturas)",
+      "destination": "/index.html"
+    }
+  ]
+}

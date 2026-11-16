@@ -110,18 +110,18 @@ export default function AuditoriaPage() {
   const totalEventos = eventosQuery.data?.total ?? 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Auditoría y Eventos</h1>
+    <div className="min-w-0 space-y-6 px-4 pb-6 sm:px-8 sm:pb-8">
+
+      <header className="-mx-4 border-b border-gray-200 bg-white px-4 py-5 sm:-mx-8 sm:px-8">
+        <h1 className="text-xl font-bold text-gray-900">Auditoría y Eventos</h1>
         <p className="text-sm text-gray-500 mt-1">
           Registro de actividad del sistema y eventos de dominio
         </p>
-      </div>
+      </header>
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+        <nav className="-mb-px flex flex-wrap gap-x-6 gap-y-2">
           <button
             onClick={() => setTab('audit')}
             className={`whitespace-nowrap border-b-2 pb-3 px-1 text-sm font-medium transition-colors ${
@@ -159,7 +159,7 @@ export default function AuditoriaPage() {
       {tab === 'audit' && (
         <div className="space-y-4">
           {/* Filtros */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <select
               value={filtroEntidad}
               onChange={(e) => setFiltroEntidad(e.target.value)}
@@ -272,7 +272,7 @@ export default function AuditoriaPage() {
       {tab === 'eventos' && (
         <div className="space-y-4">
           {/* Filtros */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <select
               value={filtroTipoEvento}
               onChange={(e) => setFiltroTipoEvento(e.target.value)}
