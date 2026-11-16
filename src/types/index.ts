@@ -10,6 +10,7 @@ export enum EstadoEncargo {
   REUNIFICADO = 'REUNIFICADO',
   ANULADO = 'ANULADO',
   CERRADO = 'CERRADO',
+  EXPIRADO = 'EXPIRADO',
 }
 
 export enum EstadoFisico {

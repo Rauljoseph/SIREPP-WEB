@@ -1,5 +1,6 @@
-import { useState, Component, type ReactNode, type ErrorInfo } from 'react';
-import { Plus, Search, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, Component, type ReactNode, type ErrorInfo } from 'react';
+import { Plus, Search, AlertTriangle, Filter } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -13,7 +14,6 @@ import { EstadoEncargo, TipoEvento, type Encargo, type CrearEncargoDto } from '.
 import { encargosApi, consultaApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-// Error boundary para capturar errores de renderizado
 class EncargosErrorBoundary extends Component<
   { children: ReactNode },
   { hasError: boolean; error: Error | null }
@@ -56,6 +56,7 @@ const estadoBadge: Record<string, { variant: 'success' | 'warning' | 'danger' | 
   REUNIFICADO: { variant: 'success', label: 'Reunificado' },
   ANULADO: { variant: 'neutral', label: 'Anulado' },
   CERRADO: { variant: 'danger', label: 'Cerrado' },
+  EXPIRADO: { variant: 'neutral', label: 'Expirado' },
 };
 
 const tipoEventoLabels: Record<string, string> = {
@@ -64,7 +65,15 @@ const tipoEventoLabels: Record<string, string> = {
   EXTRAVIO: 'Extravío',
 };
 
-// Validar formato de placa patente chilena: LLNNNN (antigua) o LLLLNN (nueva)
+const FILTROS_ESTADO = [
+  { value: '', label: 'Todos' },
+  { value: 'VIGENTE', label: 'Vigentes' },
+  { value: 'REUNIFICADO', label: 'Reunificados' },
+  { value: 'CERRADO', label: 'Cerrados' },
+  { value: 'ANULADO', label: 'Anulados' },
+  { value: 'EXPIRADO', label: 'Expirados' },
+];
+
 function esPlacaValida(placa: string): boolean {
   const limpia = placa.toUpperCase().replace(/[-.\s]/g, '');
   return /^[A-Z]{2}\d{4}$/.test(limpia) || /^[A-Z]{4}\d{2}$/.test(limpia);
@@ -89,8 +98,10 @@ const initialForm: CrearEncargoDto = {
 
 function EncargosPageContent() {
   const { puedeRegistrar, puedeAnular, usuario } = useAuth();
+  const [searchParams] = useSearchParams();
   const [encargos, setEncargos] = useState<Encargo[]>([]);
   const [searchPlaca, setSearchPlaca] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState(searchParams.get('estado') || '');
   const [showModal, setShowModal] = useState(false);
   const [showAnularModal, setShowAnularModal] = useState(false);
   const [selectedEncargo, setSelectedEncargo] = useState<Encargo | null>(null);
@@ -98,10 +109,42 @@ function EncargosPageContent() {
   const [form, setForm] = useState<CrearEncargoDto>(initialForm);
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(false);
   const [error, setError] = useState('');
+  const [modoLista, setModoLista] = useState(true);
+
+  // Cargar lista al montar y al cambiar filtro
+  useEffect(() => {
+    cargarLista(filtroEstado);
+  }, []);
+
+  const cargarLista = async (estado?: string) => {
+    setListLoading(true);
+    setError('');
+    setModoLista(true);
+    try {
+      const data = await encargosApi.listar(estado || undefined);
+      setEncargos(data);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      setError(e.response?.data?.message || 'Error al cargar encargos');
+    } finally {
+      setListLoading(false);
+    }
+  };
+
+  const handleFiltro = (estado: string) => {
+    setFiltroEstado(estado);
+    setSearchPlaca('');
+    cargarLista(estado);
+  };
 
   const handleSearch = async () => {
-    if (!searchPlaca.trim()) return;
+    if (!searchPlaca.trim()) {
+      // Si el campo está vacío, volver a listar todos
+      cargarLista(filtroEstado);
+      return;
+    }
     const placaLimpia = searchPlaca.toUpperCase().replace(/[-.\s]/g, '');
     if (!esPlacaValida(placaLimpia)) {
       setError('Formato de placa inválido. Use formato BBCC12 (nuevo) o BB1234 (antiguo)');
@@ -109,6 +152,7 @@ function EncargosPageContent() {
     }
     setSearchLoading(true);
     setError('');
+    setModoLista(false);
     try {
       const estado = await consultaApi.estadoPlaca(placaLimpia);
       setEncargos(estado.encargo ? [estado.encargo] : []);
@@ -258,6 +302,24 @@ function EncargosPageContent() {
           </div>
         </Card>
 
+        {/* Filtros por estado */}
+        <div className="flex gap-2 flex-wrap items-center">
+          <Filter size={16} className="text-gray-400" />
+          {FILTROS_ESTADO.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => handleFiltro(f.value)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                filtroEstado === f.value
+                  ? 'bg-blue-700 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
             {error}
@@ -266,12 +328,21 @@ function EncargosPageContent() {
 
         {/* Table */}
         <Card padding={false}>
-          {encargos.length === 0 && !searchLoading ? (
+          {listLoading || searchLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700" />
+              <span className="ml-3 text-gray-500 text-sm">Cargando encargos...</span>
+            </div>
+          ) : encargos.length === 0 ? (
             <EmptyState
               icon={AlertTriangle}
               title="Sin encargos"
-              description="Busque una placa o registre un nuevo encargo para comenzar."
-              actionLabel={puedeRegistrar() ? "Nuevo Encargo" : undefined}
+              description={
+                modoLista
+                  ? 'No hay encargos registrados con este filtro.'
+                  : 'Busque una placa o registre un nuevo encargo para comenzar.'
+              }
+              actionLabel={puedeRegistrar() ? 'Nuevo Encargo' : undefined}
               onAction={puedeRegistrar() ? () => setShowModal(true) : undefined}
             />
           ) : (
