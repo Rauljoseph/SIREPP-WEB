@@ -117,7 +117,7 @@ function EncargosPageContent() {
   const [modoLista, setModoLista] = useState(true);
 
   useEffect(() => {
-    cargarLista(filtroEstado, 1);
+    cargarLista('', 1);
   }, []);
 
   const cargarLista = async (estado: string, pg: number) => {
@@ -130,7 +130,7 @@ function EncargosPageContent() {
         page: pg,
         limit: PAGE_SIZE,
       });
-      setEncargos(result.data);
+      setEncargos(Array.isArray(result.data) ? result.data : []);
       setPage(result.page);
       setTotalPages(result.totalPages);
       setTotal(result.total);
