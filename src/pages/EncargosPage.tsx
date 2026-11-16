@@ -1,6 +1,5 @@
 import { useState, useEffect, Component, type ReactNode, type ErrorInfo } from 'react';
-import { Plus, Search, AlertTriangle, Filter } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { Plus, Search, AlertTriangle, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -83,6 +82,8 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+const PAGE_SIZE = 20;
+
 const initialForm: CrearEncargoDto = {
   placa: '',
   tipoEvento: TipoEvento.ROBO,
@@ -98,10 +99,12 @@ const initialForm: CrearEncargoDto = {
 
 function EncargosPageContent() {
   const { puedeRegistrar, puedeAnular, usuario } = useAuth();
-  const [searchParams] = useSearchParams();
   const [encargos, setEncargos] = useState<Encargo[]>([]);
   const [searchPlaca, setSearchPlaca] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState(searchParams.get('estado') || '');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [showAnularModal, setShowAnularModal] = useState(false);
   const [selectedEncargo, setSelectedEncargo] = useState<Encargo | null>(null);
@@ -113,18 +116,24 @@ function EncargosPageContent() {
   const [error, setError] = useState('');
   const [modoLista, setModoLista] = useState(true);
 
-  // Cargar lista al montar y al cambiar filtro
   useEffect(() => {
-    cargarLista(filtroEstado);
+    cargarLista(filtroEstado, 1);
   }, []);
 
-  const cargarLista = async (estado?: string) => {
+  const cargarLista = async (estado: string, pg: number) => {
     setListLoading(true);
     setError('');
     setModoLista(true);
     try {
-      const data = await encargosApi.listar(estado || undefined);
-      setEncargos(data);
+      const result = await encargosApi.listar({
+        estado: estado || undefined,
+        page: pg,
+        limit: PAGE_SIZE,
+      });
+      setEncargos(result.data);
+      setPage(result.page);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
       setError(e.response?.data?.message || 'Error al cargar encargos');
@@ -136,13 +145,16 @@ function EncargosPageContent() {
   const handleFiltro = (estado: string) => {
     setFiltroEstado(estado);
     setSearchPlaca('');
-    cargarLista(estado);
+    cargarLista(estado, 1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    cargarLista(filtroEstado, newPage);
   };
 
   const handleSearch = async () => {
     if (!searchPlaca.trim()) {
-      // Si el campo está vacío, volver a listar todos
-      cargarLista(filtroEstado);
+      cargarLista(filtroEstado, 1);
       return;
     }
     const placaLimpia = searchPlaca.toUpperCase().replace(/[-.\s]/g, '');
@@ -156,6 +168,9 @@ function EncargosPageContent() {
     try {
       const estado = await consultaApi.estadoPlaca(placaLimpia);
       setEncargos(estado.encargo ? [estado.encargo] : []);
+      setTotal(estado.encargo ? 1 : 0);
+      setTotalPages(1);
+      setPage(1);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
       setError(e.response?.data?.message || 'Error al buscar encargos');
@@ -173,7 +188,7 @@ function EncargosPageContent() {
     setLoading(true);
     setError('');
     try {
-      const nuevoEncargo = await encargosApi.crear({
+      await encargosApi.crear({
         placa: form.placa.toUpperCase().replace(/[-.\s]/g, ''),
         tipoEvento: form.tipoEvento,
         denuncianteRut: form.denuncianteRut,
@@ -185,9 +200,9 @@ function EncargosPageContent() {
         constanciaNumero: form.constanciaNumero || undefined,
         observaciones: form.observaciones || undefined,
       } as CrearEncargoDto);
-      setEncargos((prev) => [nuevoEncargo, ...prev]);
       setShowModal(false);
       setForm(initialForm);
+      cargarLista(filtroEstado, 1);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
       setError(e.response?.data?.message || 'Error al crear encargo');
@@ -340,7 +355,7 @@ function EncargosPageContent() {
               description={
                 modoLista
                   ? 'No hay encargos registrados con este filtro.'
-                  : 'Busque una placa o registre un nuevo encargo para comenzar.'
+                  : 'No se encontró un encargo con esa placa.'
               }
               actionLabel={puedeRegistrar() ? 'Nuevo Encargo' : undefined}
               onAction={puedeRegistrar() ? () => setShowModal(true) : undefined}
@@ -353,6 +368,58 @@ function EncargosPageContent() {
             />
           )}
         </Card>
+
+        {/* Paginación */}
+        {modoLista && totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              Mostrando {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total} encargos
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(page - 1)}
+                disabled={page <= 1}
+                className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={16} /> Anterior
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (page <= 3) {
+                    pageNum = i + 1;
+                  } else if (page >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = page - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                        page === pageNum
+                          ? 'bg-blue-700 text-white'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => handlePageChange(page + 1)}
+                disabled={page >= totalPages}
+                className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Siguiente <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal Crear */}
